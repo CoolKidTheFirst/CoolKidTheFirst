@@ -112,58 +112,38 @@ local function onHitZombie(zombie, attacker, bodyPartType, handWeapon)
 end
 Events.OnHitZombie.Add(onHitZombie)
 
-local function ensureIndicatorPanel()
-    if BanditTweaks.IndicatorPanel then
+local indicatorRenderer = ISUIElement:new(0, 0, 0, 0)
+indicatorRenderer:initialise()
+
+local function renderIndicatorOverlay()
+    if not isIngameState() then
         return
     end
 
-    local width = getCore():getScreenWidth()
-    local height = getCore():getScreenHeight()
-    local panel = ISUIElement:new(0, 0, width, height)
-    panel:initialise()
-    panel:setAnchorRight(true)
-    panel:setAnchorBottom(true)
-    panel:setAlwaysOnTop(true)
-
-    function panel:render()
-        if not isIngameState() then
-            return
-        end
-
-        local player = getSpecificPlayer(0)
-        if not player then
-            return
-        end
-
-        local zoom = getCore():getZoom(player:getPlayerNum())
-        local size = math.max(4, math.floor(10 / zoom))
-        local verticalOffset = 85 / zoom
-
-        for zombie in pairs(trackedHostiles) do
-            if zombie and not zombie:isDead() then
-                local screenX, screenY = ISCoordConversion.ToScreen(zombie:getX(), zombie:getY(), zombie:getZ())
-                local drawX = screenX / zoom - size / 2
-                local drawY = screenY / zoom - verticalOffset - size
-                self:drawRect(drawX, drawY, size, size, 0.85, 1, 0, 0)
-                self:drawRectBorder(drawX, drawY, size, size, 1, 0.35, 0, 0)
-            end
-        end
-    end
-
-    panel:addToUIManager()
-    BanditTweaks.IndicatorPanel = panel
-end
-Events.OnGameStart.Add(ensureIndicatorPanel)
-
-local function updatePanelSize()
-    if not BanditTweaks.IndicatorPanel then
+    local player = getSpecificPlayer(0)
+    if not player then
         return
     end
 
-    BanditTweaks.IndicatorPanel:setWidth(getCore():getScreenWidth())
-    BanditTweaks.IndicatorPanel:setHeight(getCore():getScreenHeight())
+    local zoom = getCore():getZoom(player:getPlayerNum())
+    local size = math.max(4, math.floor(10 / zoom))
+    local verticalOffset = 85 / zoom
+
+    for zombie in pairs(trackedHostiles) do
+        if zombie and not zombie:isDead() then
+            local screenX, screenY = ISCoordConversion.ToScreen(zombie:getX(), zombie:getY(), zombie:getZ())
+            local drawX = screenX / zoom - size / 2
+            local drawY = screenY / zoom - verticalOffset - size
+
+            indicatorRenderer:drawRectStatic(drawX, drawY, size, size, 0.85, 1, 0, 0)
+            indicatorRenderer:drawRectStatic(drawX, drawY, size, 1, 1, 0.35, 0, 0)
+            indicatorRenderer:drawRectStatic(drawX, drawY + size - 1, size, 1, 1, 0.35, 0, 0)
+            indicatorRenderer:drawRectStatic(drawX, drawY, 1, size, 1, 0.35, 0, 0)
+            indicatorRenderer:drawRectStatic(drawX + size - 1, drawY, 1, size, 1, 0.35, 0, 0)
+        end
+    end
 end
-Events.OnResolutionChange.Add(updatePanelSize)
+Events.OnPostUIDraw.Add(renderIndicatorOverlay)
 
 local function patchFriendlyFireCheck()
     if BanditTweaks._patchedFriendlyFireCheck then
