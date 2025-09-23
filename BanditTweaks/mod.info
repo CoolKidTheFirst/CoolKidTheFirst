@@ -2,5 +2,5 @@ name=Bandit Tweaks
 poster=poster.png
 id=BanditTweaks
 description=Tweaks for the Bandit Mod
-require=Bandits2
+require=Bandits2;BanditsDayOne
 url=http://theindiestone.com/forums/index.php/topic/2011-how-to-use-the-upcoming-modloader/
