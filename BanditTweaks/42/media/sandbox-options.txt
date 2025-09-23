@@ -19,3 +19,8 @@ option BanditTweaks.FriendlyFireEnabled = {
     type = boolean, default = true,
     page = BanditTweaks, translation = BanditTweaks.FriendlyFireEnabled, _tooltip = BanditTweaks.FriendlyFireEnabled_tooltip,
 }
+
+option BanditTweaks.DayOneStartingCivilians = {
+    type = boolean, default = false,
+    page = BanditTweaks, translation = BanditTweaks.DayOneStartingCivilians, _tooltip = BanditTweaks.DayOneStartingCivilians_tooltip,
+}

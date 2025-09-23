@@ -14,4 +14,7 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
     Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
 
+    Sandbox_BanditTweaks.DayOneStartingCivilians = "Day One starter civilians",
+    Sandbox_BanditTweaks.DayOneStartingCivilians_tooltip = "Enable the friendly civilians that spawn with you in Bandits Day One. When enabled they arrive at a safe distance.",
+
 }

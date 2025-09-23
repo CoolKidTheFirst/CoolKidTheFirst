@@ -188,6 +188,63 @@ Events.OnTick.Add(patchFriendlyFireCheck)
 
 local hostilePhaseNames = {"SpawnGang", "SpawnBandits", "SpawnInmates"}
 
+local function cloneSpawnPoint(point)
+    if not point then
+        return nil
+    end
+    return {x = point.x, y = point.y, z = point.z}
+end
+
+local function normalizeSpawnPoint(spawnPoint)
+    if type(spawnPoint) ~= "table" then
+        return nil
+    end
+
+    if spawnPoint.x and spawnPoint.y then
+        return cloneSpawnPoint(spawnPoint)
+    end
+
+    for _, value in pairs(spawnPoint) do
+        if type(value) == "table" and value.x and value.y then
+            return cloneSpawnPoint(value)
+        end
+    end
+
+    return nil
+end
+
+local function isSpawnPointFarEnough(player, point, minDistance)
+    if not player or not point or not minDistance then
+        return false
+    end
+
+    local px, py = player:getX(), player:getY()
+    local dx, dy = point.x - px, point.y - py
+    return (dx * dx + dy * dy) >= (minDistance * minDistance)
+end
+
+local function findDayOneStarterSpawnPoint(player)
+    if not player or not BanditScheduler or not BanditScheduler.GenerateSpawnPoint then
+        return nil
+    end
+
+    local baseDistance = BanditTweaks.Config.dayOneStarterMinDistance or BanditTweaks.Defaults.dayOneStarterMinDistance or 35
+    local attempts = {baseDistance + 15, baseDistance + 5, baseDistance}
+
+    for _, dist in ipairs(attempts) do
+        local rawPoint = BanditScheduler.GenerateSpawnPoint(player, dist)
+        local point = normalizeSpawnPoint(rawPoint)
+        if point then
+            point.z = point.z or player:getZ()
+            if isSpawnPointFarEnough(player, point, baseDistance) then
+                return point
+            end
+        end
+    end
+
+    return nil
+end
+
 local function tryPatchDayOne()
     if BanditTweaks._dayOnePatched then
         Events.OnTick.Remove(tryPatchDayOne)
@@ -216,6 +273,48 @@ local function tryPatchDayOne()
                 patchedSomething = true
             end
         end
+
+        if not BanditTweaks._patchedDayOneFamily and type(DOPhases.SpawnFamilly) == "function" then
+            DOPhases.SpawnFamilly = function(player, ...)
+                if not player then
+                    return
+                end
+
+                if not BanditTweaks.Config.dayOneStarterEnabled then
+                    return
+                end
+
+                local spawnPoint = findDayOneStarterSpawnPoint(player)
+                if not spawnPoint then
+                    return
+                end
+
+                local config = {}
+                config.clanId = 1
+                config.hasRifleChance = 0
+                config.hasPistolChance = 0
+                config.rifleMagCount = 0
+                config.pistolMagCount = 0
+
+                local event = {}
+                event.hostile = false
+                event.occured = false
+                event.program = {name = "Companion", stage = "Prepare"}
+                event.x = spawnPoint.x
+                event.y = spawnPoint.y
+                event.z = spawnPoint.z or player:getZ()
+                event.bandits = {}
+
+                local bandit = BanditCreator.MakeFromWave(config)
+                table.insert(event.bandits, bandit)
+                table.insert(event.bandits, bandit)
+
+                addSound(player, event.x, event.y, event.z, 40, 100)
+                sendClientCommand(player, 'Commands', 'SpawnGroup', event)
+            end
+            BanditTweaks._patchedDayOneFamily = true
+            patchedSomething = true
+        end
     end
 
     if BanditScheduler and BanditScheduler.GenerateSpawnPoint and not BanditTweaks._patchedScheduler then
@@ -230,7 +329,7 @@ local function tryPatchDayOne()
         patchedSomething = true
     end
 
-    local allPatched = BanditTweaks._patchedScheduler
+    local allPatched = BanditTweaks._patchedScheduler and BanditTweaks._patchedDayOneFamily
     for _, name in ipairs(hostilePhaseNames) do
         allPatched = allPatched and BanditTweaks["_patchedPhase" .. name]
     end
