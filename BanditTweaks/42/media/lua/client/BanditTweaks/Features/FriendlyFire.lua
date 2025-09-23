@@ -5,6 +5,14 @@ require "ISUI/ISWorldObjectContextMenu"
 local FriendlyFire = {}
 local trackedFriendlyHealth = {}
 
+local function getWorldHours()
+    local gameTime = getGameTime()
+    if not gameTime then
+        return 0
+    end
+    return gameTime:getWorldAgeHours() or 0
+end
+
 local function shouldTrackFriendly()
     return not BanditTweaks.Config.friendlyFireEnabled
 end
@@ -20,8 +28,10 @@ function BanditTweaks.ToggleFriendlyFire()
     local newState = not BanditTweaks.Config.friendlyFireEnabled
     BanditTweaks.SetFriendlyFireEnabled(newState)
 
-    if newState then
-        clearFriendlyHealth()
+    clearFriendlyHealth()
+
+    if BanditTweaks.Civilians and BanditTweaks.Civilians.ensureCivilianSystems then
+        BanditTweaks.Civilians.ensureCivilianSystems()
     end
 
     local player = getSpecificPlayer(0)
@@ -66,6 +76,10 @@ local function onZombieUpdate(zombie)
     end
 
     if shouldTrackFriendly() then
+        local born = brain.born or 0
+        if getWorldHours() - born < 0.05 then
+            return
+        end
         trackedFriendlyHealth[zombie] = zombie:getHealth()
     else
         trackedFriendlyHealth[zombie] = nil
