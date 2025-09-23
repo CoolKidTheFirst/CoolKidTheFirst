@@ -6,11 +6,13 @@ BanditTweaks.Defaults.spawnDistanceMultiplier = 1.5
 BanditTweaks.Defaults.hostileSpawnChanceMultiplier = 0.1
 BanditTweaks.Defaults.hostileEventChance = 0.1
 BanditTweaks.Defaults.friendlyFireEnabled = true
+BanditTweaks.Defaults.civilianFighterPercent = 20
 
 BanditTweaks.Config.spawnDistanceMultiplier = BanditTweaks.Config.spawnDistanceMultiplier or BanditTweaks.Defaults.spawnDistanceMultiplier
 BanditTweaks.Config.hostileSpawnChanceMultiplier = BanditTweaks.Config.hostileSpawnChanceMultiplier or BanditTweaks.Defaults.hostileSpawnChanceMultiplier
 BanditTweaks.Config.hostileEventChance = BanditTweaks.Config.hostileEventChance or BanditTweaks.Defaults.hostileEventChance
 BanditTweaks.Config.friendlyFireEnabled = BanditTweaks.Config.friendlyFireEnabled ~= false
+BanditTweaks.Config.civilianFighterPercent = BanditTweaks.Config.civilianFighterPercent or BanditTweaks.Defaults.civilianFighterPercent
 
 local function getSandboxNumber(options, key, default)
     local value = options and options[key]
@@ -25,6 +27,7 @@ function BanditTweaks.UpdateConfigFromSandbox()
     BanditTweaks.Config.spawnDistanceMultiplier = getSandboxNumber(options, "SpawnDistanceMultiplier", BanditTweaks.Defaults.spawnDistanceMultiplier)
     BanditTweaks.Config.hostileSpawnChanceMultiplier = getSandboxNumber(options, "HostileSpawnChanceMultiplier", BanditTweaks.Defaults.hostileSpawnChanceMultiplier)
     BanditTweaks.Config.hostileEventChance = getSandboxNumber(options, "HostileEventChance", BanditTweaks.Defaults.hostileEventChance)
+    BanditTweaks.Config.civilianFighterPercent = getSandboxNumber(options, "CivilianFighterPercent", BanditTweaks.Defaults.civilianFighterPercent)
 end
 
 BanditTweaks.UpdateConfigFromSandbox()
