@@ -6,6 +6,18 @@ require "ISUI/ISUIElement"
 local trackedHostiles = {}
 local trackedFriendlyHealth = {}
 
+local function removeLegacyIndicatorPanel()
+    local panel = BanditTweaks and BanditTweaks.IndicatorPanel
+    if panel then
+        if panel.removeFromUIManager then
+            panel:removeFromUIManager()
+        end
+        BanditTweaks.IndicatorPanel = nil
+    end
+end
+
+removeLegacyIndicatorPanel()
+
 local function clearFriendlyHealth()
     for zombie in pairs(trackedFriendlyHealth) do
         trackedFriendlyHealth[zombie] = nil
@@ -116,6 +128,8 @@ local indicatorRenderer = ISUIElement:new(0, 0, 0, 0)
 indicatorRenderer:initialise()
 
 local function renderIndicatorOverlay()
+    removeLegacyIndicatorPanel()
+
     if not isIngameState() then
         return
     end
