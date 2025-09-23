@@ -1,10 +1,46 @@
 BanditTweaks = BanditTweaks or {}
 BanditTweaks.Config = BanditTweaks.Config or {}
+BanditTweaks.Defaults = BanditTweaks.Defaults or {}
 
-BanditTweaks.Config.spawnDistanceMultiplier = 1.5
-BanditTweaks.Config.hostileSpawnChanceMultiplier = 0.1
-BanditTweaks.Config.hostileEventChance = 0.1
+BanditTweaks.Defaults.spawnDistanceMultiplier = 1.5
+BanditTweaks.Defaults.hostileSpawnChanceMultiplier = 0.1
+BanditTweaks.Defaults.hostileEventChance = 0.1
+BanditTweaks.Defaults.friendlyFireEnabled = true
+
+BanditTweaks.Config.spawnDistanceMultiplier = BanditTweaks.Config.spawnDistanceMultiplier or BanditTweaks.Defaults.spawnDistanceMultiplier
+BanditTweaks.Config.hostileSpawnChanceMultiplier = BanditTweaks.Config.hostileSpawnChanceMultiplier or BanditTweaks.Defaults.hostileSpawnChanceMultiplier
+BanditTweaks.Config.hostileEventChance = BanditTweaks.Config.hostileEventChance or BanditTweaks.Defaults.hostileEventChance
 BanditTweaks.Config.friendlyFireEnabled = BanditTweaks.Config.friendlyFireEnabled ~= false
+
+local function getSandboxNumber(options, key, default)
+    local value = options and options[key]
+    if type(value) == "number" then
+        return value
+    end
+    return default
+end
+
+function BanditTweaks.UpdateConfigFromSandbox()
+    local options = SandboxVars and SandboxVars.BanditTweaks
+    BanditTweaks.Config.spawnDistanceMultiplier = getSandboxNumber(options, "SpawnDistanceMultiplier", BanditTweaks.Defaults.spawnDistanceMultiplier)
+    BanditTweaks.Config.hostileSpawnChanceMultiplier = getSandboxNumber(options, "HostileSpawnChanceMultiplier", BanditTweaks.Defaults.hostileSpawnChanceMultiplier)
+    BanditTweaks.Config.hostileEventChance = getSandboxNumber(options, "HostileEventChance", BanditTweaks.Defaults.hostileEventChance)
+end
+
+BanditTweaks.UpdateConfigFromSandbox()
+
+if Events and Events.OnGameStart then
+    Events.OnGameStart.Add(BanditTweaks.UpdateConfigFromSandbox)
+end
+if Events and Events.OnServerStarted then
+    Events.OnServerStarted.Add(BanditTweaks.UpdateConfigFromSandbox)
+end
+if Events and Events.OnSandboxOptionsChanged then
+    Events.OnSandboxOptionsChanged.Add(BanditTweaks.UpdateConfigFromSandbox)
+end
+if Events and Events.OnLoad then
+    Events.OnLoad.Add(BanditTweaks.UpdateConfigFromSandbox)
+end
 
 BanditTweaks._dataKey = "BanditTweaks"
 BanditTweaks._modData = BanditTweaks._modData or nil
@@ -29,13 +65,20 @@ function BanditTweaks.IsModActive(modId)
 end
 
 local function loadModData(isNewGame)
+    BanditTweaks.UpdateConfigFromSandbox()
+
     local data = ModData.getOrCreate(BanditTweaks._dataKey)
     if isClient() then
         ModData.request(BanditTweaks._dataKey)
     end
 
     if data.friendlyFireEnabled == nil then
-        data.friendlyFireEnabled = true
+        local defaultFriendly = BanditTweaks.Defaults.friendlyFireEnabled
+        local options = SandboxVars and SandboxVars.BanditTweaks
+        if options and options.FriendlyFireEnabled ~= nil then
+            defaultFriendly = options.FriendlyFireEnabled and true or false
+        end
+        data.friendlyFireEnabled = defaultFriendly
     end
 
     BanditTweaks._modData = data
