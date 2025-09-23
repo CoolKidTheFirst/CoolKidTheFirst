@@ -14,8 +14,32 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.CivilianFighterPercent = "Civilian fighter percentage",
     Sandbox_BanditTweaks.CivilianFighterPercent_tooltip = "Percent of spawned civilians who will fight as normal. The rest will panic, hide, and avoid combat.",
 
+    Sandbox_BanditTweaks.CivilianHidePercent = "Hiding civilian percentage",
+    Sandbox_BanditTweaks.CivilianHidePercent_tooltip = "Portion of non-combat civilians that will look for buildings to hide inside and cower in safety.",
+
+    Sandbox_BanditTweaks.CivilianPanicPercent = "Panicked runner percentage",
+    Sandbox_BanditTweaks.CivilianPanicPercent_tooltip = "Portion of non-combat civilians that will sprint around frantically when danger is near.",
+
+    Sandbox_BanditTweaks.CivilianSeekProtectionPercent = "Protection seeker percentage",
+    Sandbox_BanditTweaks.CivilianSeekProtectionPercent_tooltip = "Portion of non-combat civilians that will shadow nearby allies who can fight to stay safe.",
+
+    Sandbox_BanditTweaks.CivilianVoicesEnabled = "Civilian voice reactions enabled",
+    Sandbox_BanditTweaks.CivilianVoicesEnabled_tooltip = "Toggles whether civilians shout fearful voice lines when stressed or injured.",
+
+    Sandbox_BanditTweaks.CivilianVoiceIntervalMinutes = "Random voice interval (minutes)",
+    Sandbox_BanditTweaks.CivilianVoiceIntervalMinutes_tooltip = "Average real-time minutes between idle civilian voice lines. Lower values make chatter more frequent.",
+
+    Sandbox_BanditTweaks.CivilianHurtVoiceCooldownMinutes = "Hurt voice cooldown (minutes)",
+    Sandbox_BanditTweaks.CivilianHurtVoiceCooldownMinutes_tooltip = "Minimum real-time minutes before a civilian can cry out in pain again after being hurt.",
+
     Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
     Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
+
+    Sandbox_BanditTweaks.DoorDisciplineEnabled = "Bandits close doors behind them",
+    Sandbox_BanditTweaks.DoorDisciplineEnabled_tooltip = "When enabled, NPCs will shut nearby doors when they secure buildings or are moving cautiously.",
+
+    Sandbox_BanditTweaks.DoorCloseCooldownMinutes = "Door closing cooldown (minutes)",
+    Sandbox_BanditTweaks.DoorCloseCooldownMinutes_tooltip = "Minimum real-time minutes before an NPC rechecks and closes doors again to avoid constant fiddling.",
 
     Sandbox_BanditTweaks.StartingFollowersEnabled = "Starting followers enabled by default",
     Sandbox_BanditTweaks.StartingFollowersEnabled_tooltip = "When disabled, friendly followers that spawn with you are dismissed automatically.",
