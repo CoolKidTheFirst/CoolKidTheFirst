@@ -111,6 +111,138 @@ local voicePools = {
     }
 }
 
+local voiceColors = {
+    random = {0.85, 0.85, 0.85},
+    hurt = {0.9, 0.25, 0.25},
+    panic = {0.95, 0.75, 0.3},
+}
+
+local function displayVoiceText(zombie, text, category)
+    if not zombie or not text then
+        return
+    end
+
+    local color = voiceColors[category] or voiceColors.random
+    local r = color[1] or 1
+    local g = color[2] or 1
+    local b = color[3] or 1
+
+    if zombie.addLineChatElement then
+        zombie:addLineChatElement(text, r, g, b)
+    elseif HaloTextHelper and HaloTextHelper.addText then
+        HaloTextHelper.addText(zombie, text, r, g, b)
+    elseif zombie.Say then
+        zombie:Say(text)
+    end
+end
+
+local fighterOccupationHints = {
+    ["fire"] = true,
+    ["rescue"] = true,
+    ["police"] = true,
+    ["officer"] = true,
+    ["cop"] = true,
+    ["soldier"] = true,
+    ["military"] = true,
+    ["veteran"] = true,
+    ["ranger"] = true,
+    ["security"] = true,
+    ["guard"] = true,
+    ["swat"] = true,
+    ["trooper"] = true,
+}
+
+local function occupationImpliesFighter(occupation)
+    if type(occupation) ~= "string" or occupation == "" then
+        return false
+    end
+
+    local lowered = occupation:lower()
+    for hint in pairs(fighterOccupationHints) do
+        if lowered:find(hint, 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function descriptorImpliesFighter(zombie)
+    if not zombie or not zombie.getDescriptor then
+        return false
+    end
+
+    local descriptor = zombie:getDescriptor()
+    if not descriptor then
+        return false
+    end
+
+    local profession = descriptor.getProfession and descriptor:getProfession()
+    if type(profession) == "string" and occupationImpliesFighter(profession) then
+        return true
+    end
+
+    local group = descriptor.getProfessionString and descriptor:getProfessionString()
+    if type(group) == "string" and occupationImpliesFighter(group) then
+        return true
+    end
+
+    return false
+end
+
+local function hasCombatLoadout(brain)
+    if not brain or not brain.weapons then
+        return false
+    end
+
+    if brain.weapons.melee and brain.weapons.melee ~= "Base.BareHands" then
+        return true
+    end
+
+    for _, slotName in ipairs({"primary", "secondary"}) do
+        local slot = brain.weapons[slotName]
+        if slot then
+            if slot.name then
+                return true
+            end
+            if slot.bulletsLeft and slot.bulletsLeft > 0 then
+                return true
+            end
+            if slot.type == "mag" and slot.magCount and slot.magCount > 0 then
+                return true
+            end
+            if slot.type == "nomag" and slot.ammoCount and slot.ammoCount > 0 then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function shouldForceFighter(zombie, brain)
+    if not brain then
+        return false
+    end
+
+    if brain.cid and brain.cid ~= CIVILIAN_CID then
+        return true
+    end
+
+    if occupationImpliesFighter(brain.occupation) then
+        return true
+    end
+
+    if descriptorImpliesFighter(zombie) then
+        return true
+    end
+
+    if hasCombatLoadout(brain) then
+        return true
+    end
+
+    return false
+end
+
 local function clampPercent(value, default)
     if type(value) ~= "number" then
         return default
@@ -167,6 +299,183 @@ local function getRolePercents()
     return fighter, hider, panic, shadow
 end
 
+local function getBanditId(zombie)
+    if not zombie then
+        return nil
+    end
+    if BanditUtils and BanditUtils.GetZombieID then
+        return BanditUtils.GetZombieID(zombie)
+    end
+    return zombie
+end
+
+local function getPlayerTargetId(player)
+    if not player then
+        return nil
+    end
+
+    if player.getOnlineID then
+        local onlineId = player:getOnlineID()
+        if onlineId and onlineId ~= -1 then
+            return "player:" .. tostring(onlineId)
+        end
+    end
+
+    if player.getUsername then
+        local username = player:getUsername()
+        if username and username ~= "" then
+            return "player:" .. username
+        end
+    end
+
+    if player.getDisplayName then
+        local displayName = player:getDisplayName()
+        if displayName and displayName ~= "" then
+            return "player:" .. displayName
+        end
+    end
+
+    return "player:" .. tostring(player)
+end
+
+local function getMovementMemory(modData)
+    if not modData then
+        return nil
+    end
+    modData._BanditTweaksMovement = modData._BanditTweaksMovement or {}
+    return modData._BanditTweaksMovement
+end
+
+local function rememberMovement(zombie, key, x, y, z)
+    local modData = zombie and zombie:getModData()
+    if not modData or not key then
+        return
+    end
+
+    local memory = getMovementMemory(modData)
+    local now = getWorldHours()
+    memory[key] = {x = x, y = y, z = z, time = now}
+end
+
+local function fetchRecentMovement(zombie, key, maxAgeHours)
+    if not zombie or not key then
+        return nil
+    end
+    local modData = zombie:getModData()
+    if not modData or not modData._BanditTweaksMovement then
+        return nil
+    end
+    local memory = modData._BanditTweaksMovement[key]
+    if not memory then
+        return nil
+    end
+
+    local now = getWorldHours()
+    if maxAgeHours and now - (memory.time or 0) > maxAgeHours then
+        modData._BanditTweaksMovement[key] = nil
+        return nil
+    end
+
+    return memory
+end
+
+local function clearMovementMemory(zombie, key)
+    if not zombie then
+        return
+    end
+    local modData = zombie:getModData()
+    if not modData or not modData._BanditTweaksMovement then
+        return
+    end
+    if key then
+        modData._BanditTweaksMovement[key] = nil
+    else
+        modData._BanditTweaksMovement = nil
+    end
+end
+
+local function getProtectionTargetId(zombie)
+    if not zombie then
+        return nil
+    end
+    local modData = zombie:getModData()
+    if not modData then
+        return nil
+    end
+    local id = modData._BanditTweaksProtectionTargetId
+    local time = modData._BanditTweaksProtectionTargetTime or 0
+    if id and getWorldHours() - time > 2 then
+        modData._BanditTweaksProtectionTargetId = nil
+        modData._BanditTweaksProtectionTargetTime = nil
+        return nil
+    end
+    return id
+end
+
+local function setProtectionTargetId(zombie, id)
+    if not zombie then
+        return
+    end
+    local modData = zombie:getModData()
+    if not modData then
+        return
+    end
+    if id then
+        modData._BanditTweaksProtectionTargetId = id
+        modData._BanditTweaksProtectionTargetTime = getWorldHours()
+    else
+        modData._BanditTweaksProtectionTargetId = nil
+        modData._BanditTweaksProtectionTargetTime = nil
+    end
+end
+
+local function selectDirectionalSquare(bandit, dirX, dirY, minDist, maxDist, memoryKey, storeResult)
+    if not bandit then
+        return nil
+    end
+
+    local bx, by, bz = bandit:getX(), bandit:getY(), bandit:getZ()
+    local baseAngle
+    if dirX and dirY then
+        local length = math.sqrt(dirX * dirX + dirY * dirY)
+        if length > 0.001 then
+            dirX = dirX / length
+            dirY = dirY / length
+            baseAngle = math.atan2(dirY, dirX)
+        end
+    end
+
+    local last = memoryKey and fetchRecentMovement(bandit, memoryKey, 0.25) or nil
+    local cell = getCell()
+
+    for attempt = 1, 12 do
+        local angle
+        if baseAngle then
+            angle = baseAngle + ZombRandFloat(-math.pi / 6, math.pi / 6)
+        else
+            angle = ZombRandFloat(0, math.pi * 2)
+        end
+
+        local dist = ZombRandFloat(minDist, maxDist)
+        local tx = math.floor(bx + math.cos(angle) * dist)
+        local ty = math.floor(by + math.sin(angle) * dist)
+        local square = cell and cell:getGridSquare(tx, ty, bz)
+        if square and square:isFree(false) and not square:isSolidTrans() and not (BanditUtils and BanditUtils.IsWater and BanditUtils.IsWater(square)) then
+            local cx = tx + 0.5
+            local cy = ty + 0.5
+            if not last or ((last.x - cx) * (last.x - cx) + (last.y - cy) * (last.y - cy) > 9) then
+                local distCalc = math.sqrt((bx - cx) * (bx - cx) + (by - cy) * (by - cy))
+                if storeResult ~= false and memoryKey then
+                    rememberMovement(bandit, memoryKey, cx, cy, bz)
+                end
+                return cx, cy, bz, distCalc
+            end
+        end
+    end
+
+    return nil
+end
+
 local function getProgramNameForRole(role)
     if role == CivilianBehavior.ROLE_HIDER then
         return "CivilianHider"
@@ -189,6 +498,23 @@ local function getBrainRole(brain)
         return CivilianBehavior.ROLE_COWARD
     end
     return nil
+end
+
+local function canProvideProtection(zombie, brain)
+    if not brain then
+        return false
+    end
+    if brain.cid ~= CIVILIAN_CID then
+        return true
+    end
+    local role = getBrainRole(brain)
+    if role == CivilianBehavior.ROLE_FIGHTER then
+        return true
+    end
+    if shouldForceFighter(zombie, brain) then
+        return true
+    end
+    return false
 end
 
 local function isCivilianBrain(brain)
@@ -303,56 +629,21 @@ local function findNearestThreat(bandit)
 end
 
 local function findRetreatTarget(bandit, threat)
-    local bx, by, bz = bandit:getX(), bandit:getY(), bandit:getZ()
     local dirX, dirY
-
     if threat then
-        dirX = bx - threat.x
-        dirY = by - threat.y
+        dirX = bandit:getX() - threat.x
+        dirY = bandit:getY() - threat.y
     end
 
-    if not dirX or (math.abs(dirX) < 0.001 and math.abs(dirY) < 0.001) then
-        local angle = ZombRandFloat(0, math.pi * 2)
-        dirX = math.cos(angle)
-        dirY = math.sin(angle)
+    local tx, ty, tz, dist = selectDirectionalSquare(bandit, dirX, dirY, 8, 14, "retreat")
+    if not tx then
+        tx, ty, tz, dist = selectDirectionalSquare(bandit, nil, nil, 7, 12, "retreat")
     end
-
-    local length = math.sqrt(dirX * dirX + dirY * dirY)
-    if length < 0.001 then
-        return
-    end
-
-    dirX = dirX / length
-    dirY = dirY / length
-
-    local cell = getCell()
-    local baseDist = 7 + ZombRand(5)
-    for _ = 1, 10 do
-        local step = baseDist + ZombRand(4)
-        local tx = math.floor(bx + dirX * step + (ZombRand(5) - 2))
-        local ty = math.floor(by + dirY * step + (ZombRand(5) - 2))
-        local square = cell and cell:getGridSquare(tx, ty, bz)
-        if square and square:isFree(false) and not square:isSolidTrans() and not (BanditUtils and BanditUtils.IsWater and BanditUtils.IsWater(square)) then
-            local dist = math.sqrt((bx - tx) * (bx - tx) + (by - ty) * (by - ty))
-            return tx + 0.5, ty + 0.5, bz, dist
-        end
-    end
+    return tx, ty, tz, dist
 end
 
 local function getRandomHideTarget(bandit)
-    local bx, by, bz = bandit:getX(), bandit:getY(), bandit:getZ()
-    local cell = getCell()
-    for _ = 1, 10 do
-        local radius = 5 + ZombRand(6)
-        local angle = ZombRandFloat(0, math.pi * 2)
-        local tx = math.floor(bx + math.cos(angle) * radius)
-        local ty = math.floor(by + math.sin(angle) * radius)
-        local square = cell and cell:getGridSquare(tx, ty, bz)
-        if square and square:isFree(false) and not square:isSolidTrans() and not (BanditUtils and BanditUtils.IsWater and BanditUtils.IsWater(square)) then
-            local dist = math.sqrt((bx - tx) * (bx - tx) + (by - ty) * (by - ty))
-            return tx + 0.5, ty + 0.5, bz, dist
-        end
-    end
+    return selectDirectionalSquare(bandit, nil, nil, 6, 11, "hide")
 end
 
 local function pickSquareInRoom(room)
@@ -379,13 +670,26 @@ end
 local function findShelterSquare(bandit)
     local current = bandit:getSquare()
     if current and current:getRoom() then
-        return {x = current:getX() + 0.5, y = current:getY() + 0.5, z = current:getZ(), dist = 0}
+        local cx, cy, cz = current:getX() + 0.5, current:getY() + 0.5, current:getZ()
+        rememberMovement(bandit, "hide", cx, cy, cz)
+        return {x = cx, y = cy, z = cz, dist = 0}
     end
 
     local bx, by, bz = bandit:getX(), bandit:getY(), bandit:getZ()
     local cell = getCell()
     local bestSquare
     local bestDistSq = math.huge
+
+    local directionalX, directionalY, directionalZ, directionalDist = selectDirectionalSquare(bandit, nil, nil, 7, 13, "hide", false)
+    if directionalX then
+        local dSquare = cell and cell:getGridSquare(math.floor(directionalX), math.floor(directionalY), directionalZ)
+        if dSquare and dSquare:getRoom() and dSquare:isFree(false) and not dSquare:isSolidTrans() then
+            rememberMovement(bandit, "hide", directionalX, directionalY, directionalZ)
+            return {x = directionalX, y = directionalY, z = directionalZ, dist = directionalDist or math.sqrt((bx - directionalX) * (bx - directionalX) + (by - directionalY) * (by - directionalY))}
+        end
+    end
+
+    local lastHide = fetchRecentMovement(bandit, "hide", 0.5)
 
     for radius = 2, 14 do
         for attempt = 1, 8 do
@@ -394,12 +698,16 @@ local function findShelterSquare(bandit)
             local ty = math.floor(by + math.sin(angle) * radius)
             local square = cell and cell:getGridSquare(tx, ty, bz)
             if square and square:getRoom() and square:isFree(false) and not square:isSolidTrans() then
-                local dx = bx - tx
-                local dy = by - ty
-                local distSq = dx * dx + dy * dy
-                if distSq < bestDistSq then
-                    bestDistSq = distSq
-                    bestSquare = square
+                local cx = tx + 0.5
+                local cy = ty + 0.5
+                if not lastHide or ((lastHide.x - cx) * (lastHide.x - cx) + (lastHide.y - cy) * (lastHide.y - cy) > 9) then
+                    local dx = bx - tx
+                    local dy = by - ty
+                    local distSq = dx * dx + dy * dy
+                    if distSq < bestDistSq then
+                        bestDistSq = distSq
+                        bestSquare = square
+                    end
                 end
             end
         end
@@ -409,7 +717,9 @@ local function findShelterSquare(bandit)
     end
 
     if bestSquare then
-        return {x = bestSquare:getX() + 0.5, y = bestSquare:getY() + 0.5, z = bestSquare:getZ(), dist = math.sqrt(bestDistSq)}
+        local cx, cy, cz = bestSquare:getX() + 0.5, bestSquare:getY() + 0.5, bestSquare:getZ()
+        rememberMovement(bandit, "hide", cx, cy, cz)
+        return {x = cx, y = cy, z = cz, dist = math.sqrt(bestDistSq)}
     end
 
     return nil
@@ -419,24 +729,32 @@ local function findProtectionTarget(bandit)
     local bx, by = bandit:getX(), bandit:getY()
     local best
     local bestDistSq = math.huge
+    local myId = getBanditId(bandit)
+    local currentTarget = getProtectionTargetId(bandit)
 
     if BanditZombie and BanditZombie.CacheLightB then
-        local selfId = BanditUtils and BanditUtils.GetZombieID and BanditUtils.GetZombieID(bandit)
         for id, entry in pairs(BanditZombie.CacheLightB) do
-            if id ~= selfId then
+            if id ~= myId then
                 local zombie = BanditZombie.Cache and BanditZombie.Cache[id]
                 if zombie then
                     local brain = entry.brain or (BanditBrain and BanditBrain.Get and BanditBrain.Get(zombie))
-                    if brain and not brain.hostile and not brain.hostileP then
+                    if brain and not brain.hostile and not brain.hostileP and canProvideProtection(zombie, brain) then
                         local role = getBrainRole(brain)
-                        local canFight = not role or role == CivilianBehavior.ROLE_FIGHTER
-                        if brain.cid ~= CIVILIAN_CID or canFight then
-                            local dx = bx - entry.x
-                            local dy = by - entry.y
-                            local distSq = dx * dx + dy * dy
-                            if distSq < bestDistSq then
-                                bestDistSq = distSq
-                                best = {x = entry.x + 0.5, y = entry.y + 0.5, z = entry.z, dist = math.sqrt(distSq)}
+                        if role ~= CivilianBehavior.ROLE_SHADOW and role ~= CivilianBehavior.ROLE_COWARD then
+                            local targetId = getBanditId(zombie)
+                            local modData = zombie:getModData()
+                            if not modData or modData._BanditTweaksProtectionTargetId ~= myId then
+                                local dx = bx - entry.x
+                                local dy = by - entry.y
+                                local actualDistSq = dx * dx + dy * dy
+                                local scoreDistSq = actualDistSq
+                                if targetId == currentTarget then
+                                    scoreDistSq = scoreDistSq * 0.5
+                                end
+                                if scoreDistSq < bestDistSq then
+                                    bestDistSq = scoreDistSq
+                                    best = {x = entry.x + 0.5, y = entry.y + 0.5, z = entry.z, dist = math.sqrt(actualDistSq), id = targetId}
+                                end
                             end
                         end
                     end
@@ -448,13 +766,18 @@ local function findProtectionTarget(bandit)
     if getNumActivePlayers then
         for i = 0, getNumActivePlayers() - 1 do
             local player = getSpecificPlayer(i)
-            if player then
+            if player and not player:isDead() then
                 local dx = bx - player:getX()
                 local dy = by - player:getY()
-                local distSq = dx * dx + dy * dy
-                if distSq < bestDistSq then
-                    bestDistSq = distSq
-                    best = {x = player:getX(), y = player:getY(), z = player:getZ(), dist = math.sqrt(distSq)}
+                local actualDistSq = dx * dx + dy * dy
+                local targetId = getPlayerTargetId(player)
+                local scoreDistSq = actualDistSq
+                if targetId == currentTarget then
+                    scoreDistSq = scoreDistSq * 0.5
+                end
+                if scoreDistSq < bestDistSq then
+                    bestDistSq = scoreDistSq
+                    best = {x = player:getX(), y = player:getY(), z = player:getZ(), dist = math.sqrt(actualDistSq), id = targetId}
                 end
             end
         end
@@ -482,13 +805,13 @@ local function defineCivilianPrograms()
             end
 
             if tx then
-                local walkType = dist and dist > 4 and "Run" or "Walk"
-                table.insert(tasks, BanditUtils.GetMoveTask(0.02, tx, ty, tz, walkType, dist or 4, false))
+                local walkType = dist and dist > 5 and "Run" or "Walk"
+                table.insert(tasks, BanditUtils.GetMoveTask(0.03, tx, ty, tz, walkType, math.max(3, (dist or 5) * 0.75), false))
             else
                 table.insert(tasks, {action = "Time", time = 120})
             end
 
-            table.insert(tasks, {action = "Time", time = 80 + ZombRand(80)})
+            table.insert(tasks, {action = "Time", time = 140 + ZombRand(100)})
             return {status = true, next = "Hide", tasks = tasks}
         end
 
@@ -520,16 +843,16 @@ local function defineCivilianPrograms()
             end
 
             if tx then
-                table.insert(tasks, BanditUtils.GetMoveTask(0.04, tx, ty, tz, "Run", dist or 5, false))
+                table.insert(tasks, BanditUtils.GetMoveTask(0.05, tx, ty, tz, "Run", math.max(4, (dist or 6) * 0.85), false))
             end
 
-            table.insert(tasks, {action = "Time", time = 60 + ZombRand(40)})
+            table.insert(tasks, {action = "Time", time = 110 + ZombRand(60)})
             return {status = true, next = "CatchBreath", tasks = tasks}
         end
 
         function ZombiePrograms.CivilianPanicked.CatchBreath(bandit)
             local tasks = {}
-            table.insert(tasks, {action = "Time", time = 70 + ZombRand(60)})
+            table.insert(tasks, {action = "Time", time = 90 + ZombRand(70)})
             return {status = true, next = "Sprint", tasks = tasks}
         end
     end
@@ -589,25 +912,32 @@ local function defineCivilianPrograms()
                 local walkType = dist > 7 and "Run" or "Walk"
                 local offsetX = ZombRandFloat(-1.0, 1.0)
                 local offsetY = ZombRandFloat(-1.0, 1.0)
-                table.insert(tasks, BanditUtils.GetMoveTask(0.02, target.x + offsetX, target.y + offsetY, target.z, walkType, math.max(1.5, dist * 0.6), false))
-                table.insert(tasks, {action = "Time", time = 100 + ZombRand(80)})
+                local destX = target.x + offsetX
+                local destY = target.y + offsetY
+                setProtectionTargetId(bandit, target.id)
+                rememberMovement(bandit, "protection", destX, destY, target.z)
+                table.insert(tasks, BanditUtils.GetMoveTask(0.02, destX, destY, target.z, walkType, math.max(2, dist * 0.7), false))
+                table.insert(tasks, {action = "Time", time = 120 + ZombRand(60)})
                 return {status = true, next = "SeekProtection", tasks = tasks}
             end
 
+            setProtectionTargetId(bandit, nil)
+            clearMovementMemory(bandit, "protection")
             table.insert(tasks, {action = "Time", time = 120 + ZombRand(60)})
             return {status = true, next = "Fallback", tasks = tasks}
         end
 
         function ZombiePrograms.CivilianShadow.Fallback(bandit)
             local tasks = {}
+            setProtectionTargetId(bandit, nil)
             local threat = findNearestThreat(bandit)
             local tx, ty, tz, dist = findRetreatTarget(bandit, threat)
             if tx then
-                table.insert(tasks, BanditUtils.GetMoveTask(0.02, tx, ty, tz, "Run", dist or 4, false))
+                table.insert(tasks, BanditUtils.GetMoveTask(0.04, tx, ty, tz, "Run", math.max(3.5, (dist or 5) * 0.8), false))
             else
                 tx, ty, tz, dist = getRandomHideTarget(bandit)
                 if tx then
-                    table.insert(tasks, BanditUtils.GetMoveTask(0.02, tx, ty, tz, "Walk", dist or 4, false))
+                    table.insert(tasks, BanditUtils.GetMoveTask(0.02, tx, ty, tz, "Walk", math.max(2.5, dist or 4), false))
                 end
             end
             table.insert(tasks, {action = "Time", time = 80 + ZombRand(60)})
@@ -710,7 +1040,11 @@ local function applyRole(zombie, brain, role)
     return true
 end
 
-local function rollCivilianRole(brain)
+local function rollCivilianRole(zombie, brain)
+    if shouldForceFighter(zombie, brain) then
+        return CivilianBehavior.ROLE_FIGHTER
+    end
+
     local fighter, hider, panic, shadow = getRolePercents()
     local roll = (brain and brain.rnd and brain.rnd[3]) or ZombRand(100)
     if roll < fighter then
@@ -787,10 +1121,8 @@ local function sayVoiceLine(zombie, category, data)
         return
     end
 
-    if zombie and line.text and zombie.Say then
-        zombie:Say(line.text)
-    elseif zombie and line.text then
-        zombie:Say(line.text)
+    if zombie and line.text then
+        displayVoiceText(zombie, line.text, category)
     end
 
     if category == "random" then
@@ -861,7 +1193,7 @@ local function updateCivilianBehavior(zombie, brain)
 
     local role = modData[CivilianBehavior.CIVILIAN_ROLE_KEY]
     if not role then
-        role = rollCivilianRole(brain)
+        role = rollCivilianRole(zombie, brain)
         applyRole(zombie, brain, role)
     else
         ensureRoleActive(zombie, brain, role)
@@ -873,6 +1205,8 @@ end
 local function onZombieUpdate(zombie)
     if not zombie or not zombie:getVariableBoolean("Bandit") then
         voiceTracker[zombie] = nil
+        clearMovementMemory(zombie)
+        setProtectionTargetId(zombie, nil)
         return
     end
 
@@ -886,10 +1220,13 @@ end
 
 local function onZombieDead(zombie)
     voiceTracker[zombie] = nil
+    clearMovementMemory(zombie)
+    setProtectionTargetId(zombie, nil)
 end
 
 local function initializeCivilianTweaks()
     CivilianBehavior._roleRevision = (CivilianBehavior._roleRevision or 0) + 1
+    voiceTracker = {}
     ensureCivilianSystems()
 end
 
@@ -906,7 +1243,7 @@ function CivilianBehavior.ensureCowardState(zombie, brain)
 end
 
 function CivilianBehavior.convertFollowerToCivilian(zombie, brain)
-    local role = rollCivilianRole(brain)
+    local role = rollCivilianRole(zombie, brain)
     return applyRole(zombie, brain, role)
 end
 
