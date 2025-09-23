@@ -1,0 +1,17 @@
+Sandbox_EN = {
+
+    Sandbox_BanditTweaks = "Bandit Tweaks",
+
+    Sandbox_BanditTweaks.SpawnDistanceMultiplier = "Spawn distance multiplier",
+    Sandbox_BanditTweaks.SpawnDistanceMultiplier_tooltip = "Multiplies the base distance used when spawning bandits.",
+
+    Sandbox_BanditTweaks.HostileSpawnChanceMultiplier = "Hostile clan spawn chance multiplier",
+    Sandbox_BanditTweaks.HostileSpawnChanceMultiplier_tooltip = "Scales the spawn chance applied to hostile bandit clans.",
+
+    Sandbox_BanditTweaks.HostileEventChance = "Hostile bandit event chance",
+    Sandbox_BanditTweaks.HostileEventChance_tooltip = "Chance that scripted hostile bandit events will occur.",
+
+    Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
+    Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
+
+}
