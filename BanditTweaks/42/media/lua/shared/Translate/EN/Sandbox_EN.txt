@@ -11,6 +11,9 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.HostileEventChance = "Hostile bandit event chance",
     Sandbox_BanditTweaks.HostileEventChance_tooltip = "Chance that scripted hostile bandit events will occur.",
 
+    Sandbox_BanditTweaks.CivilianFighterPercent = "Civilian fighter percentage",
+    Sandbox_BanditTweaks.CivilianFighterPercent_tooltip = "Percent of spawned civilians who will fight as normal. The rest will panic, hide, and avoid combat.",
+
     Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
     Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
 
