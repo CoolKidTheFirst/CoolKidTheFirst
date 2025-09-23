@@ -17,4 +17,6 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
     Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
 
+    Sandbox_BanditTweaks.StartingFollowersEnabled = "Starting followers enabled by default",
+    Sandbox_BanditTweaks.StartingFollowersEnabled_tooltip = "When disabled, friendly followers that spawn with you are dismissed automatically.",
 }
