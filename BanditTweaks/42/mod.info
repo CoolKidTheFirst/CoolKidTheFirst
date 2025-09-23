@@ -1,4 +1,5 @@
 name=Bandit Tweaks
-poster=poster.png
 id=BanditTweaks
 description=Tweaks for the Bandit Mod
+require=\Bandits2,\BanditsDayOne
+poster=poster.png
