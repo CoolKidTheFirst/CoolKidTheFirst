@@ -14,4 +14,10 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.FriendlyFireEnabled = "Friendly fire enabled by default",
     Sandbox_BanditTweaks.FriendlyFireEnabled_tooltip = "Initial state for friendly fire. Can still be toggled in-game via the context menu.",
 
+    Sandbox_BanditTweaks.IndicatorEnabled = "Enemy indicator enabled by default",
+    Sandbox_BanditTweaks.IndicatorEnabled_tooltip = "Controls whether hostile bandit indicators are visible.",
+
+    Sandbox_BanditTweaks.IndicatorOutline = "Use outline enemy indicator",
+    Sandbox_BanditTweaks.IndicatorOutline_tooltip = "Draw hostile bandit indicators as outlines instead of filled squares.",
+
 }

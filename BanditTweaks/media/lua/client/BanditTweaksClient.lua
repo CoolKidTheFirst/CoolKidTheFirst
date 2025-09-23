@@ -27,23 +27,57 @@ function BanditTweaks.ToggleFriendlyFire()
     end
 end
 
-local function addFriendlyFireOption(playerNum, context, worldobjects, test)
-    local label
-    if BanditTweaks.Config.friendlyFireEnabled then
-        label = "Disable Friendly Fire"
-    else
-        label = "Enable Friendly Fire"
-    end
+function BanditTweaks.ToggleEnemyIndicators()
+    local newState = not BanditTweaks.Config.indicatorEnabled
+    BanditTweaks.SetIndicatorEnabled(newState)
 
-    local option = context:addOption("[Bandit Tweaks] " .. label, worldobjects, BanditTweaks.ToggleFriendlyFire)
-    if option then
+    local player = getSpecificPlayer(0)
+    if player then
+        local message = newState and "Enemy indicators enabled" or "Enemy indicators disabled"
+        player:Say(message)
+    end
+end
+
+function BanditTweaks.ToggleIndicatorStyle()
+    local outline = not BanditTweaks.Config.indicatorOutline
+    BanditTweaks.SetIndicatorOutline(outline)
+
+    local player = getSpecificPlayer(0)
+    if player then
+        local message = outline and "Enemy indicators set to outline" or "Enemy indicators set to filled"
+        player:Say(message)
+    end
+end
+
+local function addBanditTweaksOptions(playerNum, context, worldobjects, test)
+    local friendlyLabel = BanditTweaks.Config.friendlyFireEnabled and "Disable Friendly Fire" or "Enable Friendly Fire"
+    local friendlyOption = context:addOption("[Bandit Tweaks] " .. friendlyLabel, worldobjects, BanditTweaks.ToggleFriendlyFire)
+    if friendlyOption then
         local toolTip = ISWorldObjectContextMenu.addToolTip()
         toolTip.description = "When disabled you cannot damage friendly bandits."
         toolTip:setName("Enable Friendly Fire")
-        option.toolTip = toolTip
+        friendlyOption.toolTip = toolTip
+    end
+
+    local indicatorLabel = BanditTweaks.Config.indicatorEnabled and "Disable Enemy Indicators" or "Enable Enemy Indicators"
+    local indicatorOption = context:addOption("[Bandit Tweaks] " .. indicatorLabel, worldobjects, BanditTweaks.ToggleEnemyIndicators)
+    if indicatorOption then
+        local toolTip = ISWorldObjectContextMenu.addToolTip()
+        toolTip.description = "Show or hide the hostile bandit indicator above enemies."
+        toolTip:setName("Enemy Indicator")
+        indicatorOption.toolTip = toolTip
+    end
+
+    local styleLabel = BanditTweaks.Config.indicatorOutline and "Use Filled Enemy Indicator" or "Use Outline Enemy Indicator"
+    local styleOption = context:addOption("[Bandit Tweaks] " .. styleLabel, worldobjects, BanditTweaks.ToggleIndicatorStyle)
+    if styleOption then
+        local toolTip = ISWorldObjectContextMenu.addToolTip()
+        toolTip.description = "Switch between a filled or outline indicator for hostile bandits."
+        toolTip:setName("Enemy Indicator Style")
+        styleOption.toolTip = toolTip
     end
 end
-Events.OnFillWorldObjectContextMenu.Add(addFriendlyFireOption)
+Events.OnFillWorldObjectContextMenu.Add(addBanditTweaksOptions)
 
 local function shouldTrackFriendly()
     return not BanditTweaks.Config.friendlyFireEnabled
@@ -136,17 +170,39 @@ local function ensureIndicatorPanel()
             return
         end
 
+        if not BanditTweaks.Config.indicatorEnabled then
+            return
+        end
+
         local zoom = getCore():getZoom(player:getPlayerNum())
         local size = math.max(4, math.floor(10 / zoom))
         local verticalOffset = 85 / zoom
 
         for zombie in pairs(trackedHostiles) do
             if zombie and not zombie:isDead() then
-                local screenX, screenY = ISCoordConversion.ToScreen(zombie:getX(), zombie:getY(), zombie:getZ())
-                local drawX = screenX / zoom - size / 2
-                local drawY = screenY / zoom - verticalOffset - size
-                self:drawRect(drawX, drawY, size, size, 0.85, 1, 0, 0)
-                self:drawRectBorder(drawX, drawY, size, size, 1, 0.35, 0, 0)
+                local canSee = false
+                if player.CanSee then
+                    canSee = player:CanSee(zombie) and true or false
+                end
+
+                if not canSee and player.canSeeSquare then
+                    local square = zombie:getCurrentSquare()
+                    if square then
+                        canSee = player:canSeeSquare(square)
+                    end
+                end
+
+                if canSee then
+                    local screenX, screenY = ISCoordConversion.ToScreen(zombie:getX(), zombie:getY(), zombie:getZ())
+                    local drawX = screenX / zoom - size / 2
+                    local drawY = screenY / zoom - verticalOffset - size
+                    if BanditTweaks.Config.indicatorOutline then
+                        self:drawRectBorder(drawX, drawY, size, size, 1, 1, 0, 0)
+                    else
+                        self:drawRect(drawX, drawY, size, size, 0.85, 1, 0, 0)
+                        self:drawRectBorder(drawX, drawY, size, size, 1, 0.35, 0, 0)
+                    end
+                end
             end
         end
     end

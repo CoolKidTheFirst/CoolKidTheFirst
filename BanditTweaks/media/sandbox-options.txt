@@ -19,3 +19,13 @@ option BanditTweaks.FriendlyFireEnabled = {
     type = boolean, default = true,
     page = BanditTweaks, translation = BanditTweaks.FriendlyFireEnabled, _tooltip = BanditTweaks.FriendlyFireEnabled_tooltip,
 }
+
+option BanditTweaks.IndicatorEnabled = {
+    type = boolean, default = true,
+    page = BanditTweaks, translation = BanditTweaks.IndicatorEnabled, _tooltip = BanditTweaks.IndicatorEnabled_tooltip,
+}
+
+option BanditTweaks.IndicatorOutline = {
+    type = boolean, default = false,
+    page = BanditTweaks, translation = BanditTweaks.IndicatorOutline, _tooltip = BanditTweaks.IndicatorOutline_tooltip,
+}
