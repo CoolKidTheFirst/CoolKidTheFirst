@@ -126,6 +126,43 @@ local function ensureIndicatorPanel()
     panel:setAlwaysOnTop(true)
     panel.bConsumeMouseEvents = false
 
+    -- Prevent the overlay from blocking normal UI input.
+    function panel:isMouseOver()
+        return false
+    end
+
+    function panel:isPointOver(x, y)
+        return false
+    end
+
+    function panel:onMouseDown(x, y)
+        return false
+    end
+
+    function panel:onMouseUp(x, y)
+        return false
+    end
+
+    function panel:onRightMouseDown(x, y)
+        return false
+    end
+
+    function panel:onRightMouseUp(x, y)
+        return false
+    end
+
+    function panel:onMouseMove(dx, dy)
+        return false
+    end
+
+    function panel:onMouseMoveOutside(dx, dy)
+        return false
+    end
+
+    function panel:onMouseWheel(del)
+        return false
+    end
+
     function panel:render()
         if not isIngameState() then
             return
