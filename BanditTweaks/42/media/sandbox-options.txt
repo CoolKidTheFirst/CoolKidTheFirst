@@ -24,3 +24,8 @@ option BanditTweaks.FriendlyFireEnabled = {
     type = boolean, default = true,
     page = BanditTweaks, translation = BanditTweaks.FriendlyFireEnabled, _tooltip = BanditTweaks.FriendlyFireEnabled_tooltip,
 }
+
+option BanditTweaks.StartingFollowersEnabled = {
+    type = boolean, default = true,
+    page = BanditTweaks, translation = BanditTweaks.StartingFollowersEnabled, _tooltip = BanditTweaks.StartingFollowersEnabled_tooltip,
+}
