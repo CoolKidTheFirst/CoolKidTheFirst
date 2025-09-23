@@ -20,9 +20,49 @@ option BanditTweaks.CivilianFighterPercent = {
     page = BanditTweaks, translation = BanditTweaks.CivilianFighterPercent, _tooltip = BanditTweaks.CivilianFighterPercent_tooltip,
 }
 
+option BanditTweaks.CivilianHidePercent = {
+    type = integer, min = 0, max = 100, default = 20,
+    page = BanditTweaks, translation = BanditTweaks.CivilianHidePercent, _tooltip = BanditTweaks.CivilianHidePercent_tooltip,
+}
+
+option BanditTweaks.CivilianPanicPercent = {
+    type = integer, min = 0, max = 100, default = 20,
+    page = BanditTweaks, translation = BanditTweaks.CivilianPanicPercent, _tooltip = BanditTweaks.CivilianPanicPercent_tooltip,
+}
+
+option BanditTweaks.CivilianSeekProtectionPercent = {
+    type = integer, min = 0, max = 100, default = 20,
+    page = BanditTweaks, translation = BanditTweaks.CivilianSeekProtectionPercent, _tooltip = BanditTweaks.CivilianSeekProtectionPercent_tooltip,
+}
+
+option BanditTweaks.CivilianVoicesEnabled = {
+    type = boolean, default = true,
+    page = BanditTweaks, translation = BanditTweaks.CivilianVoicesEnabled, _tooltip = BanditTweaks.CivilianVoicesEnabled_tooltip,
+}
+
+option BanditTweaks.CivilianVoiceIntervalMinutes = {
+    type = double, min = 0, max = 120, default = 7.20,
+    page = BanditTweaks, translation = BanditTweaks.CivilianVoiceIntervalMinutes, _tooltip = BanditTweaks.CivilianVoiceIntervalMinutes_tooltip,
+}
+
+option BanditTweaks.CivilianHurtVoiceCooldownMinutes = {
+    type = double, min = 0, max = 60, default = 3.00,
+    page = BanditTweaks, translation = BanditTweaks.CivilianHurtVoiceCooldownMinutes, _tooltip = BanditTweaks.CivilianHurtVoiceCooldownMinutes_tooltip,
+}
+
 option BanditTweaks.FriendlyFireEnabled = {
     type = boolean, default = true,
     page = BanditTweaks, translation = BanditTweaks.FriendlyFireEnabled, _tooltip = BanditTweaks.FriendlyFireEnabled_tooltip,
+}
+
+option BanditTweaks.DoorDisciplineEnabled = {
+    type = boolean, default = true,
+    page = BanditTweaks, translation = BanditTweaks.DoorDisciplineEnabled, _tooltip = BanditTweaks.DoorDisciplineEnabled_tooltip,
+}
+
+option BanditTweaks.DoorCloseCooldownMinutes = {
+    type = double, min = 0, max = 30, default = 1.20,
+    page = BanditTweaks, translation = BanditTweaks.DoorCloseCooldownMinutes, _tooltip = BanditTweaks.DoorCloseCooldownMinutes_tooltip,
 }
 
 option BanditTweaks.StartingFollowersEnabled = {
