@@ -6,11 +6,15 @@ BanditTweaks.Defaults.spawnDistanceMultiplier = 1.5
 BanditTweaks.Defaults.hostileSpawnChanceMultiplier = 0.1
 BanditTweaks.Defaults.hostileEventChance = 0.1
 BanditTweaks.Defaults.friendlyFireEnabled = true
+BanditTweaks.Defaults.indicatorEnabled = true
+BanditTweaks.Defaults.indicatorOutline = false
 
 BanditTweaks.Config.spawnDistanceMultiplier = BanditTweaks.Config.spawnDistanceMultiplier or BanditTweaks.Defaults.spawnDistanceMultiplier
 BanditTweaks.Config.hostileSpawnChanceMultiplier = BanditTweaks.Config.hostileSpawnChanceMultiplier or BanditTweaks.Defaults.hostileSpawnChanceMultiplier
 BanditTweaks.Config.hostileEventChance = BanditTweaks.Config.hostileEventChance or BanditTweaks.Defaults.hostileEventChance
 BanditTweaks.Config.friendlyFireEnabled = BanditTweaks.Config.friendlyFireEnabled ~= false
+BanditTweaks.Config.indicatorEnabled = BanditTweaks.Config.indicatorEnabled ~= false
+BanditTweaks.Config.indicatorOutline = BanditTweaks.Config.indicatorOutline == true
 
 local function getSandboxNumber(options, key, default)
     local value = options and options[key]
@@ -20,11 +24,26 @@ local function getSandboxNumber(options, key, default)
     return default
 end
 
+local function getSandboxBoolean(options, key, default)
+    if not options then
+        return default
+    end
+
+    local value = options[key]
+    if value == nil then
+        return default
+    end
+
+    return value and true or false
+end
+
 function BanditTweaks.UpdateConfigFromSandbox()
     local options = SandboxVars and SandboxVars.BanditTweaks
     BanditTweaks.Config.spawnDistanceMultiplier = getSandboxNumber(options, "SpawnDistanceMultiplier", BanditTweaks.Defaults.spawnDistanceMultiplier)
     BanditTweaks.Config.hostileSpawnChanceMultiplier = getSandboxNumber(options, "HostileSpawnChanceMultiplier", BanditTweaks.Defaults.hostileSpawnChanceMultiplier)
     BanditTweaks.Config.hostileEventChance = getSandboxNumber(options, "HostileEventChance", BanditTweaks.Defaults.hostileEventChance)
+    BanditTweaks.Config.indicatorEnabled = getSandboxBoolean(options, "IndicatorEnabled", BanditTweaks.Defaults.indicatorEnabled)
+    BanditTweaks.Config.indicatorOutline = getSandboxBoolean(options, "IndicatorOutline", BanditTweaks.Defaults.indicatorOutline)
 end
 
 BanditTweaks.UpdateConfigFromSandbox()
@@ -72,17 +91,36 @@ local function loadModData(isNewGame)
         ModData.request(BanditTweaks._dataKey)
     end
 
+    local options = SandboxVars and SandboxVars.BanditTweaks
+
     if data.friendlyFireEnabled == nil then
         local defaultFriendly = BanditTweaks.Defaults.friendlyFireEnabled
-        local options = SandboxVars and SandboxVars.BanditTweaks
         if options and options.FriendlyFireEnabled ~= nil then
             defaultFriendly = options.FriendlyFireEnabled and true or false
         end
         data.friendlyFireEnabled = defaultFriendly
     end
 
+    if data.indicatorEnabled == nil then
+        local defaultIndicator = BanditTweaks.Defaults.indicatorEnabled
+        if options and options.IndicatorEnabled ~= nil then
+            defaultIndicator = options.IndicatorEnabled and true or false
+        end
+        data.indicatorEnabled = defaultIndicator
+    end
+
+    if data.indicatorOutline == nil then
+        local defaultOutline = BanditTweaks.Defaults.indicatorOutline
+        if options and options.IndicatorOutline ~= nil then
+            defaultOutline = options.IndicatorOutline and true or false
+        end
+        data.indicatorOutline = defaultOutline
+    end
+
     BanditTweaks._modData = data
     BanditTweaks.Config.friendlyFireEnabled = data.friendlyFireEnabled ~= false
+    BanditTweaks.Config.indicatorEnabled = data.indicatorEnabled ~= false
+    BanditTweaks.Config.indicatorOutline = data.indicatorOutline == true
 end
 Events.OnInitGlobalModData.Add(loadModData)
 
@@ -90,6 +128,8 @@ local function receiveModData(key, data)
     if key == BanditTweaks._dataKey and data then
         BanditTweaks._modData = data
         BanditTweaks.Config.friendlyFireEnabled = data.friendlyFireEnabled ~= false
+        BanditTweaks.Config.indicatorEnabled = data.indicatorEnabled ~= false
+        BanditTweaks.Config.indicatorOutline = data.indicatorOutline == true
     end
 end
 Events.OnReceiveGlobalModData.Add(receiveModData)
@@ -100,6 +140,30 @@ function BanditTweaks.SetFriendlyFireEnabled(enabled)
 
     if BanditTweaks._modData then
         BanditTweaks._modData.friendlyFireEnabled = enabled
+        if isServer() then
+            ModData.transmit(BanditTweaks._dataKey)
+        end
+    end
+end
+
+function BanditTweaks.SetIndicatorEnabled(enabled)
+    enabled = enabled and true or false
+    BanditTweaks.Config.indicatorEnabled = enabled
+
+    if BanditTweaks._modData then
+        BanditTweaks._modData.indicatorEnabled = enabled
+        if isServer() then
+            ModData.transmit(BanditTweaks._dataKey)
+        end
+    end
+end
+
+function BanditTweaks.SetIndicatorOutline(outline)
+    outline = outline and true or false
+    BanditTweaks.Config.indicatorOutline = outline
+
+    if BanditTweaks._modData then
+        BanditTweaks._modData.indicatorOutline = outline
         if isServer() then
             ModData.transmit(BanditTweaks._dataKey)
         end
