@@ -124,6 +124,7 @@ local function ensureIndicatorPanel()
     panel:setAnchorRight(true)
     panel:setAnchorBottom(true)
     panel:setAlwaysOnTop(true)
+    panel.bConsumeMouseEvents = false
 
     function panel:render()
         if not isIngameState() then
