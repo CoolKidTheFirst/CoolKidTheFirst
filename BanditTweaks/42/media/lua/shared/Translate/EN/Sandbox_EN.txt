@@ -42,5 +42,5 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.DoorCloseCooldownMinutes_tooltip = "Minimum real-time minutes before an NPC rechecks and closes doors again to avoid constant fiddling.",
 
     Sandbox_BanditTweaks.StartingFollowersEnabled = "Starting followers enabled by default",
-    Sandbox_BanditTweaks.StartingFollowersEnabled_tooltip = "When disabled, friendly followers that spawn with you are dismissed automatically.",
+    Sandbox_BanditTweaks.StartingFollowersEnabled_tooltip = "When disabled, Bandits Day One will no longer assign friendly followers at the start of new games.",
 }
