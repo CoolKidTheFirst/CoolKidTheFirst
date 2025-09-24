@@ -15,6 +15,8 @@ BanditTweaks.Defaults.civilianSeekProtectionPercent = 0
 BanditTweaks.Defaults.civilianVoicesEnabled = true
 BanditTweaks.Defaults.civilianRandomVoiceIntervalHours = 0.12
 BanditTweaks.Defaults.civilianHurtVoiceCooldownHours = 0.05
+BanditTweaks.Defaults.civilianFighterSpawnChance = 0.5
+BanditTweaks.Defaults.civilianCowardSpawnChance = 1.5
 BanditTweaks.Defaults.doorDisciplineEnabled = true
 BanditTweaks.Defaults.doorCloseCooldownHours = 0.02
 BanditTweaks.Defaults.startingFollowersEnabled = true
@@ -30,6 +32,8 @@ BanditTweaks.Config.civilianSeekProtectionPercent = BanditTweaks.Config.civilian
 BanditTweaks.Config.civilianVoicesEnabled = BanditTweaks.Config.civilianVoicesEnabled ~= false
 BanditTweaks.Config.civilianRandomVoiceIntervalHours = BanditTweaks.Config.civilianRandomVoiceIntervalHours or BanditTweaks.Defaults.civilianRandomVoiceIntervalHours
 BanditTweaks.Config.civilianHurtVoiceCooldownHours = BanditTweaks.Config.civilianHurtVoiceCooldownHours or BanditTweaks.Defaults.civilianHurtVoiceCooldownHours
+BanditTweaks.Config.civilianFighterSpawnChance = BanditTweaks.Config.civilianFighterSpawnChance or BanditTweaks.Defaults.civilianFighterSpawnChance
+BanditTweaks.Config.civilianCowardSpawnChance = BanditTweaks.Config.civilianCowardSpawnChance or BanditTweaks.Defaults.civilianCowardSpawnChance
 BanditTweaks.Config.doorDisciplineEnabled = BanditTweaks.Config.doorDisciplineEnabled ~= false
 BanditTweaks.Config.doorCloseCooldownHours = BanditTweaks.Config.doorCloseCooldownHours or BanditTweaks.Defaults.doorCloseCooldownHours
 BanditTweaks.Config.startingFollowersEnabled = BanditTweaks.Config.startingFollowersEnabled ~= false
@@ -59,6 +63,8 @@ function BanditTweaks.UpdateConfigFromSandbox()
     BanditTweaks.Config.civilianHidePercent = getSandboxNumber(options, "CivilianHidePercent", BanditTweaks.Defaults.civilianHidePercent)
     BanditTweaks.Config.civilianPanicPercent = getSandboxNumber(options, "CivilianPanicPercent", BanditTweaks.Defaults.civilianPanicPercent)
     BanditTweaks.Config.civilianSeekProtectionPercent = getSandboxNumber(options, "CivilianSeekProtectionPercent", BanditTweaks.Defaults.civilianSeekProtectionPercent)
+    BanditTweaks.Config.civilianFighterSpawnChance = getSandboxNumber(options, "CivilianFighterSpawnChance", BanditTweaks.Defaults.civilianFighterSpawnChance)
+    BanditTweaks.Config.civilianCowardSpawnChance = getSandboxNumber(options, "CivilianCowardSpawnChance", BanditTweaks.Defaults.civilianCowardSpawnChance)
     BanditTweaks.Config.civilianVoicesEnabled = getSandboxBoolean(options, "CivilianVoicesEnabled", BanditTweaks.Defaults.civilianVoicesEnabled)
     local voiceIntervalMinutes = getSandboxNumber(options, "CivilianVoiceIntervalMinutes", BanditTweaks.Defaults.civilianRandomVoiceIntervalHours * 60)
     local hurtCooldownMinutes = getSandboxNumber(options, "CivilianHurtVoiceCooldownMinutes", BanditTweaks.Defaults.civilianHurtVoiceCooldownHours * 60)
