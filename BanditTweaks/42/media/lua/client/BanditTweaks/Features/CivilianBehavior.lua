@@ -12,7 +12,7 @@ CivilianBehavior.ROLE_SHADOW = "shadow"
 
 local originalAreEnemies
 local originalNeedResupply
-local voiceTracker = {}
+local voiceTracker = setmetatable({}, { __mode = "k" })
 CivilianBehavior._roleRevision = 0
 
 local voicePools = {
@@ -148,20 +148,20 @@ local function displayVoiceText(zombie, text, category, brain)
     end
 end
 
-local fighterOccupationHints = {
-    ["fire"] = true,
-    ["rescue"] = true,
-    ["police"] = true,
-    ["officer"] = true,
-    ["cop"] = true,
-    ["soldier"] = true,
-    ["military"] = true,
-    ["veteran"] = true,
-    ["ranger"] = true,
-    ["security"] = true,
-    ["guard"] = true,
-    ["swat"] = true,
-    ["trooper"] = true,
+local fighterOccupationKeywords = {
+    "fire",
+    "rescue",
+    "police",
+    "officer",
+    "cop",
+    "soldier",
+    "military",
+    "veteran",
+    "ranger",
+    "security",
+    "guard",
+    "swat",
+    "trooper",
 }
 
 local function occupationImpliesFighter(occupation)
@@ -170,11 +170,12 @@ local function occupationImpliesFighter(occupation)
     end
 
     local lowered = occupation:lower()
-    for hint in pairs(fighterOccupationHints) do
-        if lowered:find(hint, 1, true) then
+    for _, keyword in ipairs(fighterOccupationKeywords) do
+        if lowered:find(keyword, 1, true) then
             return true
         end
     end
+
     return false
 end
 
@@ -189,12 +190,36 @@ local function descriptorImpliesFighter(zombie)
     end
 
     local profession = descriptor.getProfession and descriptor:getProfession()
-    if type(profession) == "string" and occupationImpliesFighter(profession) then
+    if profession and occupationImpliesFighter(profession) then
         return true
     end
 
     local group = descriptor.getProfessionString and descriptor:getProfessionString()
-    if type(group) == "string" and occupationImpliesFighter(group) then
+    if group and occupationImpliesFighter(group) then
+        return true
+    end
+
+    return false
+end
+
+local function slotCarriesWeapon(slot)
+    if not slot then
+        return false
+    end
+
+    if slot.name and slot.name ~= "" then
+        return true
+    end
+
+    if slot.bulletsLeft and slot.bulletsLeft > 0 then
+        return true
+    end
+
+    if slot.type == "mag" and slot.magCount and slot.magCount > 0 then
+        return true
+    end
+
+    if slot.type == "nomag" and slot.ammoCount and slot.ammoCount > 0 then
         return true
     end
 
@@ -210,45 +235,11 @@ local function hasCombatLoadout(brain)
         return true
     end
 
-    for _, slotName in ipairs({"primary", "secondary"}) do
-        local slot = brain.weapons[slotName]
-        if slot then
-            if slot.name then
-                return true
-            end
-            if slot.bulletsLeft and slot.bulletsLeft > 0 then
-                return true
-            end
-            if slot.type == "mag" and slot.magCount and slot.magCount > 0 then
-                return true
-            end
-            if slot.type == "nomag" and slot.ammoCount and slot.ammoCount > 0 then
-                return true
-            end
-        end
-    end
-
-    return false
-end
-
-local function shouldForceFighter(zombie, brain)
-    if not brain then
-        return false
-    end
-
-    if brain.cid and brain.cid ~= CIVILIAN_CID then
+    if slotCarriesWeapon(brain.weapons.primary) then
         return true
     end
 
-    if occupationImpliesFighter(brain.occupation) then
-        return true
-    end
-
-    if descriptorImpliesFighter(zombie) then
-        return true
-    end
-
-    if hasCombatLoadout(brain) then
+    if slotCarriesWeapon(brain.weapons.secondary) then
         return true
     end
 
@@ -257,13 +248,17 @@ end
 
 local function clampPercent(value, default)
     if type(value) ~= "number" then
-        return default
+        return default or 0
     end
+
     if value < 0 then
         return 0
-    elseif value > 100 then
+    end
+
+    if value > 100 then
         return 100
     end
+
     return value
 end
 
@@ -281,34 +276,79 @@ local function getConfig()
     return config or defaults or {}
 end
 
-local function getRolePercents()
+local function calculateRolePercents()
     local config = getConfig()
     local defaults = BanditTweaks and BanditTweaks.Defaults or {}
-    local fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 20, defaults.civilianFighterPercent or 20)
-    local hider = clampPercent(config.civilianHidePercent or defaults.civilianHidePercent or 50, defaults.civilianHidePercent or 50)
-    local panic = clampPercent(config.civilianPanicPercent or defaults.civilianPanicPercent or 50, defaults.civilianPanicPercent or 50)
-    local shadow = clampPercent(config.civilianSeekProtectionPercent or defaults.civilianSeekProtectionPercent or 0, defaults.civilianSeekProtectionPercent or 0)
 
-    local totalSpecial = hider + panic + shadow
+    local percents = {
+        fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 20, defaults.civilianFighterPercent or 20),
+        hider = clampPercent(config.civilianHidePercent or defaults.civilianHidePercent or 50, defaults.civilianHidePercent or 50),
+        panic = clampPercent(config.civilianPanicPercent or defaults.civilianPanicPercent or 50, defaults.civilianPanicPercent or 50),
+        shadow = clampPercent(config.civilianSeekProtectionPercent or defaults.civilianSeekProtectionPercent or 0, defaults.civilianSeekProtectionPercent or 0),
+    }
+
+    local totalSpecial = percents.hider + percents.panic + percents.shadow
     if totalSpecial > 100 and totalSpecial > 0 then
         local scale = 100 / totalSpecial
-        hider = math.floor(hider * scale + 0.5)
-        panic = math.floor(panic * scale + 0.5)
-        shadow = math.floor(shadow * scale + 0.5)
-        local adjusted = hider + panic + shadow
+        percents.hider = math.floor(percents.hider * scale + 0.5)
+        percents.panic = math.floor(percents.panic * scale + 0.5)
+        percents.shadow = math.floor(percents.shadow * scale + 0.5)
+
+        local adjusted = percents.hider + percents.panic + percents.shadow
         if adjusted > 100 then
             local overflow = adjusted - 100
-            if shadow >= overflow then
-                shadow = shadow - overflow
-            elseif panic >= overflow then
-                panic = panic - overflow
+            if percents.shadow >= overflow then
+                percents.shadow = percents.shadow - overflow
+            elseif percents.panic >= overflow then
+                percents.panic = percents.panic - overflow
             else
-                hider = math.max(0, hider - overflow)
+                percents.hider = math.max(0, percents.hider - overflow)
             end
         end
     end
 
-    return fighter, hider, panic, shadow
+    return percents
+end
+
+local function getRolePercents()
+    local percents = calculateRolePercents()
+    return percents.fighter, percents.hider, percents.panic, percents.shadow, percents
+end
+
+local function shouldForceFighter(zombie, brain, percents)
+    if not brain then
+        return false
+    end
+
+    if brain.cid and brain.cid ~= "" and brain.cid ~= CIVILIAN_CID then
+        return true
+    end
+
+    local fighterPercent
+    if percents then
+        fighterPercent = percents.fighter
+    end
+    if fighterPercent == nil then
+        fighterPercent = select(1, getRolePercents()) or 0
+    end
+
+    if fighterPercent <= 0 then
+        return false
+    end
+
+    if occupationImpliesFighter(brain.occupation) then
+        return true
+    end
+
+    if descriptorImpliesFighter(zombie) then
+        return true
+    end
+
+    if hasCombatLoadout(brain) then
+        return true
+    end
+
+    return false
 end
 
 local function getBanditId(zombie)
@@ -488,15 +528,15 @@ local function selectDirectionalSquare(bandit, dirX, dirY, minDist, maxDist, mem
     return nil
 end
 
+local programByRole = {
+    [CivilianBehavior.ROLE_COWARD] = "CivilianCoward",
+    [CivilianBehavior.ROLE_HIDER] = "CivilianHider",
+    [CivilianBehavior.ROLE_PANICKED] = "CivilianPanicked",
+    [CivilianBehavior.ROLE_SHADOW] = "CivilianShadow",
+}
+
 local function getProgramNameForRole(role)
-    if role == CivilianBehavior.ROLE_HIDER then
-        return "CivilianHider"
-    elseif role == CivilianBehavior.ROLE_PANICKED then
-        return "CivilianPanicked"
-    elseif role == CivilianBehavior.ROLE_SHADOW then
-        return "CivilianShadow"
-    end
-    return "CivilianCoward"
+    return programByRole[role] or programByRole[CivilianBehavior.ROLE_COWARD]
 end
 
 local function getBrainRole(brain)
@@ -995,6 +1035,10 @@ end
 CivilianBehavior.ensureCivilianSystems = ensureCivilianSystems
 
 local function setFriendlyState(zombie, brain)
+    if not brain then
+        return
+    end
+
     brain.hostile = false
     brain.hostileP = false
     brain._BanditTweaksCivilianCoward = true
@@ -1015,7 +1059,7 @@ local function applyRole(zombie, brain, role)
     if not ensureCivilianSystems() then
         return false
     end
-    if not zombie or not brain then
+    if not zombie or not brain or not role then
         return false
     end
 
@@ -1029,6 +1073,8 @@ local function applyRole(zombie, brain, role)
         brain._BanditTweaksCivilianCoward = nil
         return true
     end
+
+    brain.cid = CIVILIAN_CID
 
     applyCivilianDisarm(zombie, brain)
     setFriendlyState(zombie, brain)
@@ -1053,23 +1099,27 @@ local function applyRole(zombie, brain, role)
 end
 
 local function rollCivilianRole(zombie, brain)
-    if shouldForceFighter(zombie, brain) then
+    local fighter, hider, panic, shadow, percents = getRolePercents()
+
+    if shouldForceFighter(zombie, brain, percents) then
         return CivilianBehavior.ROLE_FIGHTER
     end
 
-    local fighter, hider, panic, shadow = getRolePercents()
     local roll = (brain and brain.rnd and brain.rnd[3]) or ZombRand(100)
     if roll < fighter then
         return CivilianBehavior.ROLE_FIGHTER
     end
 
-    local nonFighterRoll = ZombRand(100)
-    if nonFighterRoll < hider then
-        return CivilianBehavior.ROLE_HIDER
-    elseif nonFighterRoll < hider + panic then
-        return CivilianBehavior.ROLE_PANICKED
-    elseif nonFighterRoll < hider + panic + shadow then
-        return CivilianBehavior.ROLE_COWARD
+    local nonFighterTotal = math.max(0, hider) + math.max(0, panic) + math.max(0, shadow)
+    if nonFighterTotal > 0 then
+        local nonFighterRoll = ZombRand(nonFighterTotal)
+        if nonFighterRoll < hider then
+            return CivilianBehavior.ROLE_HIDER
+        elseif nonFighterRoll < hider + panic then
+            return CivilianBehavior.ROLE_PANICKED
+        elseif nonFighterRoll < nonFighterTotal then
+            return CivilianBehavior.ROLE_SHADOW
+        end
     end
 
     return CivilianBehavior.ROLE_COWARD
@@ -1077,16 +1127,21 @@ end
 
 local function ensureRoleActive(zombie, brain, role)
     if role == CivilianBehavior.ROLE_FIGHTER then
-        brain._BanditTweaksCivilianRole = role
+        if brain then
+            brain._BanditTweaksCivilianRole = role
+            brain._BanditTweaksCivilianCoward = nil
+        end
         return
     end
 
-    if not brain._BanditTweaksCivilianRole or brain._BanditTweaksCivilianRole ~= role then
+    if not brain or brain._BanditTweaksCivilianRole ~= role then
         applyRole(zombie, brain, role)
         return
     end
 
     local programName = getProgramNameForRole(role)
+    brain.programFallback = programName
+
     if Bandit.GetProgram then
         local program = Bandit.GetProgram(zombie)
         if not program or program.name ~= programName then
@@ -1196,6 +1251,12 @@ local function updateCivilianBehavior(zombie, brain)
     end
 
     local modData = zombie:getModData()
+
+    if brain.cid ~= CIVILIAN_CID and not modData[CivilianBehavior.CIVILIAN_ROLE_KEY] then
+        voiceTracker[zombie] = nil
+        return
+    end
+
     local storedRevision = modData._BanditTweaksCivilianRoleRevision or 0
     if storedRevision ~= CivilianBehavior._roleRevision then
         modData[CivilianBehavior.CIVILIAN_ROLE_KEY] = nil
@@ -1238,7 +1299,7 @@ end
 
 local function initializeCivilianTweaks()
     CivilianBehavior._roleRevision = (CivilianBehavior._roleRevision or 0) + 1
-    voiceTracker = {}
+    voiceTracker = setmetatable({}, { __mode = "k" })
     ensureCivilianSystems()
 end
 
@@ -1255,6 +1316,16 @@ function CivilianBehavior.ensureCowardState(zombie, brain)
 end
 
 function CivilianBehavior.convertFollowerToCivilian(zombie, brain)
+    if not zombie or not brain then
+        return false
+    end
+
+    brain.cid = CIVILIAN_CID
+    brain._BanditTweaksCivilianRole = nil
+
+    local modData = zombie:getModData()
+    modData[CivilianBehavior.CIVILIAN_ROLE_KEY] = nil
+
     local role = rollCivilianRole(zombie, brain)
     return applyRole(zombie, brain, role)
 end
