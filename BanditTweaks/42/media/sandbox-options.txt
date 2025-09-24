@@ -1,32 +1,32 @@
 VERSION = 1,
 
 option BanditTweaks.SpawnDistanceMultiplier = {
-    type = double, min = 0.25, max = 5, default = 1.50,
+    type = double, min = 0.25, max = 5, default = 1.25,
     page = BanditTweaks, translation = BanditTweaks.SpawnDistanceMultiplier, _tooltip = BanditTweaks.SpawnDistanceMultiplier_tooltip,
 }
 
 option BanditTweaks.HostileSpawnChanceMultiplier = {
-    type = double, min = 0.00, max = 2, default = 0.10,
+    type = double, min = 0.00, max = 2, default = 0.20,
     page = BanditTweaks, translation = BanditTweaks.HostileSpawnChanceMultiplier, _tooltip = BanditTweaks.HostileSpawnChanceMultiplier_tooltip,
 }
 
 option BanditTweaks.HostileEventChance = {
-    type = double, min = 0.00, max = 1, default = 0.10,
+    type = double, min = 0.00, max = 1, default = 0.20,
     page = BanditTweaks, translation = BanditTweaks.HostileEventChance, _tooltip = BanditTweaks.HostileEventChance_tooltip,
 }
 
 option BanditTweaks.CivilianFighterPercent = {
-    type = integer, min = 0, max = 100, default = 30,
+    type = integer, min = 0, max = 100, default = 20,
     page = BanditTweaks, translation = BanditTweaks.CivilianFighterPercent, _tooltip = BanditTweaks.CivilianFighterPercent_tooltip,
 }
 
 option BanditTweaks.CivilianHidePercent = {
-    type = integer, min = 0, max = 100, default = 20,
+    type = integer, min = 0, max = 100, default = 40,
     page = BanditTweaks, translation = BanditTweaks.CivilianHidePercent, _tooltip = BanditTweaks.CivilianHidePercent_tooltip,
 }
 
 option BanditTweaks.CivilianPanicPercent = {
-    type = integer, min = 0, max = 100, default = 20,
+    type = integer, min = 0, max = 100, default = 40,
     page = BanditTweaks, translation = BanditTweaks.CivilianPanicPercent, _tooltip = BanditTweaks.CivilianPanicPercent_tooltip,
 }
 
@@ -41,12 +41,12 @@ option BanditTweaks.CivilianVoicesEnabled = {
 }
 
 option BanditTweaks.CivilianVoiceIntervalMinutes = {
-    type = double, min = 0, max = 120, default = 7.20,
+    type = double, min = 0, max = 120, default = 75,
     page = BanditTweaks, translation = BanditTweaks.CivilianVoiceIntervalMinutes, _tooltip = BanditTweaks.CivilianVoiceIntervalMinutes_tooltip,
 }
 
 option BanditTweaks.CivilianHurtVoiceCooldownMinutes = {
-    type = double, min = 0, max = 60, default = 3.00,
+    type = double, min = 0, max = 60, default = 30,
     page = BanditTweaks, translation = BanditTweaks.CivilianHurtVoiceCooldownMinutes, _tooltip = BanditTweaks.CivilianHurtVoiceCooldownMinutes_tooltip,
 }
 
@@ -61,7 +61,7 @@ option BanditTweaks.DoorDisciplineEnabled = {
 }
 
 option BanditTweaks.DoorCloseCooldownMinutes = {
-    type = double, min = 0, max = 30, default = 1.20,
+    type = double, min = 0, max = 30, default = 10,
     page = BanditTweaks, translation = BanditTweaks.DoorCloseCooldownMinutes, _tooltip = BanditTweaks.DoorCloseCooldownMinutes_tooltip,
 }
 
