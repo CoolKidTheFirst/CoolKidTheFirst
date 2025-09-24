@@ -112,17 +112,29 @@ local voicePools = {
 }
 
 local voiceColors = {
-    random = {0.85, 0.85, 0.85},
-    hurt = {0.9, 0.25, 0.25},
-    panic = {0.95, 0.75, 0.3},
+    friendly = {0.25, 0.85, 0.25},
+    enemy = {0.9, 0.2, 0.2},
+    default = {0.85, 0.85, 0.85},
 }
 
-local function displayVoiceText(zombie, text, category)
+local function resolveVoiceColor(zombie, brain)
+    if not brain and BanditBrain and BanditBrain.Get then
+        brain = BanditBrain.Get(zombie)
+    end
+
+    if brain and (brain.hostile or brain.hostileP) then
+        return voiceColors.enemy or voiceColors.default
+    end
+
+    return voiceColors.friendly or voiceColors.default
+end
+
+local function displayVoiceText(zombie, text, category, brain)
     if not zombie or not text then
         return
     end
 
-    local color = voiceColors[category] or voiceColors.random
+    local color = resolveVoiceColor(zombie, brain) or voiceColors.default
     local r = color[1] or 1
     local g = color[2] or 1
     local b = color[3] or 1
@@ -272,10 +284,10 @@ end
 local function getRolePercents()
     local config = getConfig()
     local defaults = BanditTweaks and BanditTweaks.Defaults or {}
-    local fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 20, defaults.civilianFighterPercent or 20)
+    local fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 30, defaults.civilianFighterPercent or 30)
     local hider = clampPercent(config.civilianHidePercent or defaults.civilianHidePercent or 20, defaults.civilianHidePercent or 20)
     local panic = clampPercent(config.civilianPanicPercent or defaults.civilianPanicPercent or 20, defaults.civilianPanicPercent or 20)
-    local shadow = clampPercent(config.civilianSeekProtectionPercent or defaults.civilianSeekProtectionPercent or 20, defaults.civilianSeekProtectionPercent or 20)
+    local shadow = clampPercent(config.civilianSeekProtectionPercent or defaults.civilianSeekProtectionPercent or 0, defaults.civilianSeekProtectionPercent or 0)
 
     local totalSpecial = hider + panic + shadow
     if totalSpecial > 100 and totalSpecial > 0 then
@@ -1057,7 +1069,7 @@ local function rollCivilianRole(zombie, brain)
     elseif nonFighterRoll < hider + panic then
         return CivilianBehavior.ROLE_PANICKED
     elseif nonFighterRoll < hider + panic + shadow then
-        return CivilianBehavior.ROLE_SHADOW
+        return CivilianBehavior.ROLE_COWARD
     end
 
     return CivilianBehavior.ROLE_COWARD
@@ -1097,7 +1109,7 @@ local function pickVoiceLine(pool, lastLine)
     return line
 end
 
-local function sayVoiceLine(zombie, category, data)
+local function sayVoiceLine(zombie, category, data, brain)
     local config = getConfig()
     if config.civilianVoicesEnabled == false then
         return
@@ -1122,7 +1134,7 @@ local function sayVoiceLine(zombie, category, data)
     end
 
     if zombie and line.text then
-        displayVoiceText(zombie, line.text, category)
+        displayVoiceText(zombie, line.text, category, brain)
     end
 
     if category == "random" then
@@ -1158,20 +1170,20 @@ local function updateCivilianVoices(zombie, brain, role)
     local hurtCooldown = math.max(config.civilianHurtVoiceCooldownHours or (BanditTweaks.Defaults and BanditTweaks.Defaults.civilianHurtVoiceCooldownHours) or 0, 0)
 
     if healthDelta > 0.04 and now >= (data.nextHurt or 0) then
-        sayVoiceLine(zombie, "hurt", data)
+        sayVoiceLine(zombie, "hurt", data, brain)
         data.nextHurt = now + hurtCooldown
     end
 
     if role ~= CivilianBehavior.ROLE_FIGHTER then
         local threat = findNearestThreat(zombie)
         if threat and threat.dist and threat.dist < 6 and now >= (data.nextPanic or 0) then
-            sayVoiceLine(zombie, "panic", data)
+            sayVoiceLine(zombie, "panic", data, brain)
             data.nextPanic = now + math.max(0.02, randomInterval * 0.5)
         end
     end
 
     if randomInterval > 0 and now >= (data.nextRandom or 0) then
-        sayVoiceLine(zombie, "random", data)
+        sayVoiceLine(zombie, "random", data, brain)
         data.nextRandom = now + randomInterval * (0.75 + ZombRandFloat(0, 0.75))
     end
 
