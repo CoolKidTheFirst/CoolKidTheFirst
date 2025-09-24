@@ -21,12 +21,12 @@ option BanditTweaks.CivilianFighterPercent = {
 }
 
 option BanditTweaks.CivilianHidePercent = {
-    type = integer, min = 0, max = 100, default = 40,
+    type = integer, min = 0, max = 100, default = 50,
     page = BanditTweaks, translation = BanditTweaks.CivilianHidePercent, _tooltip = BanditTweaks.CivilianHidePercent_tooltip,
 }
 
 option BanditTweaks.CivilianPanicPercent = {
-    type = integer, min = 0, max = 100, default = 40,
+    type = integer, min = 0, max = 100, default = 50,
     page = BanditTweaks, translation = BanditTweaks.CivilianPanicPercent, _tooltip = BanditTweaks.CivilianPanicPercent_tooltip,
 }
 
