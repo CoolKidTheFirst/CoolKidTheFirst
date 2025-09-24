@@ -284,9 +284,9 @@ end
 local function getRolePercents()
     local config = getConfig()
     local defaults = BanditTweaks and BanditTweaks.Defaults or {}
-    local fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 30, defaults.civilianFighterPercent or 30)
-    local hider = clampPercent(config.civilianHidePercent or defaults.civilianHidePercent or 20, defaults.civilianHidePercent or 20)
-    local panic = clampPercent(config.civilianPanicPercent or defaults.civilianPanicPercent or 20, defaults.civilianPanicPercent or 20)
+    local fighter = clampPercent(config.civilianFighterPercent or defaults.civilianFighterPercent or 20, defaults.civilianFighterPercent or 20)
+    local hider = clampPercent(config.civilianHidePercent or defaults.civilianHidePercent or 50, defaults.civilianHidePercent or 50)
+    local panic = clampPercent(config.civilianPanicPercent or defaults.civilianPanicPercent or 50, defaults.civilianPanicPercent or 50)
     local shadow = clampPercent(config.civilianSeekProtectionPercent or defaults.civilianSeekProtectionPercent or 0, defaults.civilianSeekProtectionPercent or 0)
 
     local totalSpecial = hider + panic + shadow
