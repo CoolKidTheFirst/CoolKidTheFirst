@@ -23,6 +23,12 @@ Sandbox_EN = {
     Sandbox_BanditTweaks.CivilianSeekProtectionPercent = "Protection seeker percentage",
     Sandbox_BanditTweaks.CivilianSeekProtectionPercent_tooltip = "Portion of non-combat civilians that will shadow nearby allies who can fight to stay safe.",
 
+    Sandbox_BanditTweaks.CivilianFighterSpawnChance = "Civilian fighter spawn chance",
+    Sandbox_BanditTweaks.CivilianFighterSpawnChance_tooltip = "Chance that a civilian squad made up of fighters will spawn when the game schedules friendly bandit events.",
+
+    Sandbox_BanditTweaks.CivilianCowardSpawnChance = "Civilian coward spawn chance",
+    Sandbox_BanditTweaks.CivilianCowardSpawnChance_tooltip = "Chance that a coward-focused civilian group will spawn when the game schedules friendly bandit events.",
+
     Sandbox_BanditTweaks.CivilianVoicesEnabled = "Civilian voice reactions enabled",
     Sandbox_BanditTweaks.CivilianVoicesEnabled_tooltip = "Toggles whether civilians shout fearful voice lines when stressed or injured.",
 

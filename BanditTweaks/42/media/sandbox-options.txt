@@ -35,6 +35,16 @@ option BanditTweaks.CivilianSeekProtectionPercent = {
     page = BanditTweaks, translation = BanditTweaks.CivilianSeekProtectionPercent, _tooltip = BanditTweaks.CivilianSeekProtectionPercent_tooltip,
 }
 
+option BanditTweaks.CivilianFighterSpawnChance = {
+    type = double, min = 0, max = 20, default = 0.5,
+    page = BanditTweaks, translation = BanditTweaks.CivilianFighterSpawnChance, _tooltip = BanditTweaks.CivilianFighterSpawnChance_tooltip,
+}
+
+option BanditTweaks.CivilianCowardSpawnChance = {
+    type = double, min = 0, max = 20, default = 1.5,
+    page = BanditTweaks, translation = BanditTweaks.CivilianCowardSpawnChance, _tooltip = BanditTweaks.CivilianCowardSpawnChance_tooltip,
+}
+
 option BanditTweaks.CivilianVoicesEnabled = {
     type = boolean, default = true,
     page = BanditTweaks, translation = BanditTweaks.CivilianVoicesEnabled, _tooltip = BanditTweaks.CivilianVoicesEnabled_tooltip,

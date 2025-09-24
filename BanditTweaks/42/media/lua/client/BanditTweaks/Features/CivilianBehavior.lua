@@ -2,13 +2,18 @@ if isServer() then return end
 
 local CivilianBehavior = {}
 
-local CIVILIAN_CID = "c167d1e0-c077-4ee5-b353-88b374de193d"
+local CivilianGroups = require "BanditTweaks/CivilianGroups"
+local CIVILIAN_FIGHTER_CID = CivilianGroups.FIGHTER_CID
+local CIVILIAN_COWARD_CID = CivilianGroups.COWARD_CID
+
 CivilianBehavior.CIVILIAN_ROLE_KEY = "BanditTweaksCivilianRole"
 CivilianBehavior.ROLE_FIGHTER = "fighter"
 CivilianBehavior.ROLE_COWARD = "coward"
 CivilianBehavior.ROLE_HIDER = "hider"
 CivilianBehavior.ROLE_PANICKED = "panicked"
 CivilianBehavior.ROLE_SHADOW = "shadow"
+CivilianBehavior.CIVILIAN_FIGHTER_CID = CIVILIAN_FIGHTER_CID
+CivilianBehavior.CIVILIAN_COWARD_CID = CIVILIAN_COWARD_CID
 
 local originalAreEnemies
 local originalNeedResupply
@@ -320,8 +325,18 @@ local function shouldForceFighter(zombie, brain, percents)
         return false
     end
 
-    if brain.cid and brain.cid ~= "" and brain.cid ~= CIVILIAN_CID then
-        return true
+    if brain.cid and brain.cid ~= "" then
+        if brain.cid == CIVILIAN_FIGHTER_CID then
+            return true
+        end
+
+        if brain.cid == CIVILIAN_COWARD_CID then
+            return false
+        end
+
+        if not CivilianGroups.IsCivilianCID(brain.cid) then
+            return true
+        end
     end
 
     local fighterPercent
@@ -556,7 +571,11 @@ local function canProvideProtection(zombie, brain)
     if not brain then
         return false
     end
-    if brain.cid ~= CIVILIAN_CID then
+    if not CivilianGroups.IsCivilianCID(brain.cid) then
+        return true
+    end
+
+    if brain.cid == CIVILIAN_FIGHTER_CID then
         return true
     end
     local role = getBrainRole(brain)
@@ -570,7 +589,7 @@ local function canProvideProtection(zombie, brain)
 end
 
 local function isCivilianBrain(brain)
-    return brain and brain.cid == CIVILIAN_CID
+    return brain and CivilianGroups.IsCivilianCID(brain.cid)
 end
 CivilianBehavior.isCivilianBrain = isCivilianBrain
 
@@ -1071,10 +1090,11 @@ local function applyRole(zombie, brain, role)
 
     if role == CivilianBehavior.ROLE_FIGHTER then
         brain._BanditTweaksCivilianCoward = nil
+        brain.cid = CIVILIAN_FIGHTER_CID
         return true
     end
 
-    brain.cid = CIVILIAN_CID
+    brain.cid = CIVILIAN_COWARD_CID
 
     applyCivilianDisarm(zombie, brain)
     setFriendlyState(zombie, brain)
@@ -1100,6 +1120,17 @@ end
 
 local function rollCivilianRole(zombie, brain)
     local fighter, hider, panic, shadow, percents = getRolePercents()
+
+    if brain and brain.cid == CIVILIAN_FIGHTER_CID then
+        return CivilianBehavior.ROLE_FIGHTER
+    end
+
+    if brain and brain.cid == CIVILIAN_COWARD_CID then
+        fighter = 0
+        if percents then
+            percents.fighter = 0
+        end
+    end
 
     if shouldForceFighter(zombie, brain, percents) then
         return CivilianBehavior.ROLE_FIGHTER
@@ -1130,6 +1161,7 @@ local function ensureRoleActive(zombie, brain, role)
         if brain then
             brain._BanditTweaksCivilianRole = role
             brain._BanditTweaksCivilianCoward = nil
+            brain.cid = CIVILIAN_FIGHTER_CID
         end
         return
     end
@@ -1252,7 +1284,7 @@ local function updateCivilianBehavior(zombie, brain)
 
     local modData = zombie:getModData()
 
-    if brain.cid ~= CIVILIAN_CID and not modData[CivilianBehavior.CIVILIAN_ROLE_KEY] then
+    if not CivilianGroups.IsCivilianCID(brain.cid) and not modData[CivilianBehavior.CIVILIAN_ROLE_KEY] then
         voiceTracker[zombie] = nil
         return
     end
@@ -1320,7 +1352,7 @@ function CivilianBehavior.convertFollowerToCivilian(zombie, brain)
         return false
     end
 
-    brain.cid = CIVILIAN_CID
+    brain.cid = CIVILIAN_COWARD_CID
     brain._BanditTweaksCivilianRole = nil
 
     local modData = zombie:getModData()
